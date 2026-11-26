@@ -8,7 +8,10 @@
 #   BINARY  = target/desktop/hakimi-ui
 #   OUT_DIR = dist
 #
-# The resulting app is Apple Silicon only (arm64), matching the release job.
+# The binary's slices decide the DMG architecture tag:
+#   arm64            -> hakimi-<version>-macos-arm64.dmg
+#   x86_64           -> hakimi-<version>-macos-x64.dmg
+#   arm64+x86_64     -> hakimi-<version>-macos-universal.dmg
 set -euo pipefail
 
 VERSION="${1:?usage: package-macos.sh VERSION VERSION_CODE [BINARY] [OUT_DIR]}"
@@ -31,15 +34,22 @@ if [[ ! -f "$ICON" ]]; then
     exit 1
 fi
 
-ARCHS="$(lipo -archs "$BIN")"
-if [[ "$ARCHS" != "arm64" ]]; then
-    echo "error: expected an arm64 binary, got: $ARCHS" >&2
-    exit 1
-fi
+# Normalize the slice list: lipo prints them in slice order, so sort before
+# matching to accept "arm64 x86_64" and "x86_64 arm64" alike.
+ARCHS="$(lipo -archs "$BIN" | tr ' ' '\n' | grep -v '^$' | sort | tr '\n' ' ' | sed 's/ $//')"
+case "$ARCHS" in
+    arm64) TAG="arm64" ;;
+    x86_64) TAG="x64" ;;
+    "arm64 x86_64") TAG="universal" ;;
+    *)
+        echo "error: unsupported macOS architecture(s): $ARCHS" >&2
+        exit 1
+        ;;
+esac
 
 APP="$OUT_DIR/hakimi.app"
 STAGE="$OUT_DIR/dmg-stage"
-DMG="$OUT_DIR/hakimi-${VERSION}-macos-arm64.dmg"
+DMG="$OUT_DIR/hakimi-${VERSION}-macos-${TAG}.dmg"
 
 rm -rf "$APP" "$STAGE"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -88,9 +98,10 @@ PLIST
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
 xattr -cr "$APP" 2>/dev/null || true
 
-# Ad-hoc signing is mandatory on Apple Silicon. Without a Developer ID this
-# still keeps Gatekeeper's "damaged app" error away; users must right-click
-# Open (or allow it in System Settings) the first time.
+# Ad-hoc signing is mandatory on Apple Silicon; Intel accepts unsigned code
+# but we sign anyway so both slices behave the same under Gatekeeper. Without a
+# Developer ID this still keeps the "damaged app" error away; users must
+# right-click Open (or allow it in System Settings) the first time.
 codesign --force --deep --sign - "$APP"
 codesign --verify --deep --strict "$APP"
 

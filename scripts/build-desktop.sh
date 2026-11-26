@@ -4,6 +4,7 @@
 # Usage:
 #   ./scripts/build-desktop.sh
 #   HAKIMI_TARGET=x86_64-pc-windows-gnu ./scripts/build-desktop.sh
+#   HAKIMI_TARGET=x86_64-apple-darwin ./scripts/build-desktop.sh
 #
 # The resulting binary is copied to target/desktop/. Site icons are embedded
 # in the executable, so no asset directory is needed next to it.

@@ -30,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--desktop-version", required=True)
     parser.add_argument("--desktop-windows-asset", required=True)
     parser.add_argument("--desktop-macos-asset", required=True)
+    parser.add_argument("--desktop-macos-x64-asset", required=True)
     parser.add_argument("--android-version", required=True)
     parser.add_argument("--android-apk-asset", required=True)
     parser.add_argument("--android-apk-armv7-asset", required=True)
@@ -47,9 +48,10 @@ def main(argv: list[str] | None = None) -> int:
 
     windows_asset = args.desktop_windows_asset.strip()
     macos_asset = args.desktop_macos_asset.strip()
+    macos_x64_asset = args.desktop_macos_x64_asset.strip()
     apk_asset = args.android_apk_asset.strip()
     apk_armv7_asset = args.android_apk_armv7_asset.strip()
-    if not windows_asset or not macos_asset or not apk_asset or not apk_armv7_asset:
+    if not windows_asset or not macos_asset or not macos_x64_asset or not apk_asset or not apk_armv7_asset:
         fail("asset names must not be empty")
 
     manifest = {
@@ -61,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
             "assets": {
                 "windows-x64": windows_asset,
                 "macos-arm64": macos_asset,
+                "macos-x64": macos_x64_asset,
             },
         },
         "android": {

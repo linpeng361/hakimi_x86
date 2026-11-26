@@ -1,5 +1,6 @@
 /target/
 /data/
+/dist/
 /.cargo/
 /.zcode/
 /.idea/
